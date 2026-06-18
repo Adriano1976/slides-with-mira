@@ -1,7 +1,8 @@
 # Deck: Agent Skills (Mira Framework)
 
 ## 📌 Visão Geral
-Este repositório contém a implementação do deck de apresentação "Agent Skills", construído sobre a engine do **Mira Framework**. O projeto traduz conceitos complexos de Engenharia de Agentes (como Skills, MCP, Hooks e ambientes virtuais) em 10 metáforas visuais animadas. 
+
+Este repositório contém a implementação do deck de apresentação "Agent Skills", construído sobre a engine do **Mira Framework**. O projeto traduz conceitos complexos de Engenharia de Agentes (como Skills, MCP, Hooks e ambientes virtuais) em 10 metáforas visuais animadas.
 
 O foco da arquitetura está na renderização de loops de animação vetorial perpétuos de alta performance, gerenciamento estrito de ciclo de vida do DOM e prevenção de vazamento de memória (memory leaks) durante a navegação do usuário.
 
@@ -10,18 +11,23 @@ O foco da arquitetura está na renderização de loops de animação vetorial pe
 A implementação técnica segue rigorosamente os padrões das skills `mira-animator` e `mira-animated-metaphor`, utilizando **HTML5**, **CSS3 (Variáveis)**, **D3.js** e **Lucide Icons**.
 
 ### Gerenciamento de Memória e Ciclo de Vida (Anti-Leak)
+
 Como as animações em D3.js operam em loops contínuos (ad infinitum), o projeto implementa um controle rigoroso de estado para evitar degradação de performance:
+
 * **Garbage Collection Ativo:** Utilização do objeto global `window.__animRegistry` para registrar instâncias ativas.
 * **Generation Counters:** Cada slide utiliza um contador de geração (`window.__slugGen`) e `clearInterval()` no bootstrap da animação para garantir que instâncias anteriores sejam destruídas antes da nova renderização.
 * **Viewport Handling:** Integração com a API nativa `IntersectionObserver` da IDE. A renderização (ou suspensão) do palco isolado ocorre dinamicamente conforme o card entra ou sai da área visível da tela.
 
 ### Renderização e Responsividade
+
 * **Escala Vetorial Fixa:** Todos os componentes SVG operam com o atributo `viewBox="0 0 1280 720"`, garantindo proporção unificada (16:9).
 * **Preenchimento Dinâmico:** Os gráficos preenchem responsivamente a `div` de contenção `.anim-stage`, que possui a diretiva `clamp` para delimitação de tamanho.
 * **Tagging de Metadados:** Cada slide é estritamente demarcado no código com os marcadores de tamanho da engine (ex: `<!-- @MIRA:SIZE 3/10 -->`).
 
 ### Design System e Tematização
+
 O projeto proíbe o uso de cores em *hardcode* (como `#FF0000`).
+
 * A injeção de estilo é controlada pelo bloco `@MIRA:THEME`.
 * O esquema de cores obedece exclusivamente à paleta semântica do tema `mira-dark`, utilizando variáveis CSS globais como `PRIMARY` e `ACCENT2`.
 * Geração dinâmica de ícones SVG no carregamento (`init`) e eventos de scroll via `lucide.createIcons()`.
@@ -44,6 +50,7 @@ O core business da apresentação mapeia os seguintes conceitos de arquitetura d
 ## 🎮 UI/UX e Navegação
 
 A interface possui suporte completo a atalhos de teclado para controle da apresentação:
+
 * **Avançar/Recuar:** Setas Direcionais (Up/Down, Left/Right), `PageUp` e `PageDown`.
 * **Extremos:** Teclas `Home` e `End`.
 * **Display:** Tecla `F` (Aciona a API de Fullscreen).
@@ -52,5 +59,17 @@ A interface possui suporte completo a atalhos de teclado para controle da aprese
 ## 🚀 Como Executar
 
 O projeto não requer processos complexos de build, pois compila diretamente pelo navegador.
+
 1. Clone o repositório.
 2. Abra o arquivo `index.html` em qualquer navegador web moderno com suporte a ES6 e SVG.
+
+##
+
+<br><br>
+
+<div align="center">
+  <p><b><h3> Contagem de visitantes </h3></b></p>  
+  <img src="https://vbr.nathanchung.dev/badge?page_id=Adriano1976/slides-with-mira" style="height: 30px;" />
+   <br>
+  <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=87CEFA&height=120&section=footer"/>
+</div>
