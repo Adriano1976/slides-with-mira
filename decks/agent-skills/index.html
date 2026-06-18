@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Skills: Criando a sua Matrix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* @MIRA:THEME:START */
+/* MIRA THEME: mira-dark (padrão)
+   Identidade clássica do canal: fundo preto, laranja vibrante,
+   glassmorphism no estilo clássico do canal. */
+:root {
+    --mira-primary: #FF904D;
+    --mira-bg: #000000;
+    --mira-text: #ffffff;
+    --mira-text-soft: rgba(255, 255, 255, 0.70);
+    --mira-text-softer: rgba(255, 255, 255, 0.50);
+    --mira-card-bg: rgba(255, 255, 255, 0.05);
+    --mira-card-border: rgba(255, 255, 255, 0.10);
+    --mira-glow-soft: rgba(255, 144, 77, 0.15);
+    --mira-glow-strong: rgba(255, 144, 77, 0.25);
+    --mira-icon-bg: rgba(255, 144, 77, 0.15);
+    --mira-icon-border: rgba(255, 144, 77, 0.30);
+    --mira-pill-bg: rgba(255, 255, 255, 0.04);
+    --mira-pill-border: rgba(255, 255, 255, 0.08);
+    --mira-stage-glow: rgba(255, 144, 77, 0.06);
+    --mira-accent-2: #FFC766;
+}
+
+
+/* ============================================================
+   MIRA — base.css
+   Estrutura compartilhada por todos os temas.
+   Os temas definem apenas as CSS variables (--mira-*).
+   ============================================================ */
+
+body {
+    background: var(--mira-bg);
+    min-height: 100vh;
+    color: var(--mira-text);
+    font-family: 'Inter', sans-serif;
+}
+
+.primary-color { color: var(--mira-primary); }
+.primary-bg { background: var(--mira-primary); }
+
+.glass-card {
+    background: var(--mira-card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--mira-card-border);
+    box-shadow: 0 10px 30px var(--mira-glow-soft);
+    transition: all 0.3s ease;
+    border-radius: 0.75rem;
+}
+
+.glass-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px var(--mira-glow-strong);
+}
+
+.icon-hero {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    background: var(--mira-icon-bg);
+    border: 1px solid var(--mira-icon-border);
+}
+
+.attribute-pill {
+    background: var(--mira-pill-bg);
+    border: 1px solid var(--mira-pill-border);
+    transition: all 0.25s ease;
+    border-radius: 9999px;
+}
+
+.attribute-pill:hover {
+    background: var(--mira-icon-bg);
+    border-color: var(--mira-icon-border);
+    transform: translateY(-3px);
+}
+
+/* Palco de animação D3 */
+.anim-stage {
+    width: 100%;
+    height: clamp(400px, 60vh, 620px);
+    background: radial-gradient(circle at 50% 50%, var(--mira-stage-glow), transparent 70%);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.anim-stage svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.replay-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    background: var(--mira-pill-bg);
+    border: 1px solid var(--mira-pill-border);
+    color: var(--mira-text-soft);
+    border-radius: 9999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.replay-btn:hover {
+    background: var(--mira-icon-bg);
+    color: var(--mira-primary);
+}
+
+.text-soft { color: var(--mira-text-soft); }
+.text-softer { color: var(--mira-text-softer); }
+
+@keyframes mira-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+@keyframes mira-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes mira-gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+        /* @MIRA:THEME:END */
+
+        /* === CONTROLES DE SLIDE (passagem card-a-card) === */
+        html { scroll-behavior: smooth; }
+
+        #mira-progress {
+            position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+            background: linear-gradient(90deg, var(--mira-primary), var(--mira-accent-2), var(--mira-primary));
+            background-size: 200% 100%;
+            animation: mira-shimmer 2s linear infinite;
+            z-index: 9999; transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--mira-glow-strong);
+        }
+
+        @keyframes mira-shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        #mira-next {
+            position: fixed; bottom: 32px; right: 32px;
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--mira-primary); color: var(--mira-bg);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.3s ease; z-index: 9998;
+            box-shadow: 0 4px 20px var(--mira-glow-strong);
+        }
+        #mira-next.visible { opacity: 1; transform: translateY(0); }
+        #mira-next:hover { transform: translateY(-3px) scale(1.1); }
+    </style>
+</head>
+
+<body>
+    <!-- Controles de slide: barra de progresso + botão flutuante "próximo" -->
+    <div id="mira-progress"></div>
+    <button id="mira-next" aria-label="Próximo slide">
+        <i data-lucide="chevron-down" class="w-6 h-6" id="mira-next-icon"></i>
+    </button>
+
+    <!-- ============ SLIDE 1: Chatbot vs Agente ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Chatbot vs <span class="primary-color italic">Agente</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">A máquina de vendas espera, o robô aspirador nunca para.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="bot" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Loop de percepção e ação</p>
+                            <p class="text-white/50 text-xs italic">A diferença vital entre responder e agir.</p>
+                        </div>
+                    </div>
+                    <button id="replay-chatbot" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="chatbot-stage">
+                    <svg id="chatbot-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Percepção contínua</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="pause" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Reativo</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="repeat" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Loop</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="radar" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Autônomo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 2: O que é Agent Skill ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O que é uma <span class="primary-color italic">Skill</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Cartucho encaixado, habilidade transferida na hora.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="plug" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Módulo injetável</p>
+                            <p class="text-white/50 text-xs italic">O agente aprende ao receber o cartucho.</p>
+                        </div>
+                    </div>
+                    <button id="replay-skill" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="skill-stage">
+                    <svg id="skill-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Transferência imediata</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="file-text" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">SKILL.md</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="zap" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Instantâneo</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="blocks" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Reutilizável</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 3: Skill vs MCP ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Skills vs <span class="primary-color italic">MCP</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Saber como fazer contra ter a chave de acesso.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="brain" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Interno vs Externo</p>
+                            <p class="text-white/50 text-xs italic">O cérebro pulsa, a fechadura gira.</p>
+                        </div>
+                    </div>
+                    <button id="replay-mcp" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="mcp-stage">
+                    <svg id="mcp-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Capacidade vs Acesso</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="cpu" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Skill: saber</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="key" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">MCP: acessar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 4: Frontmatter e Trigger ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Frontmatter e <span class="primary-color italic">Trigger</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Quebre o vidro do alarme e acorde a habilidade.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="bell-ring" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Ativação por gatilho</p>
+                            <p class="text-white/50 text-xs italic">YAML identifica, comando dispara.</p>
+                        </div>
+                    </div>
+                    <button id="replay-trigger" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="trigger-stage">
+                    <svg id="trigger-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Identidade e disparo</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="hash" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">YAML</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="scan" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Pattern</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="flame" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Ativação</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 5: Contexto e Regras ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Contexto e <span class="primary-color italic">Regras</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Mapa com radar interno, cerca elétrica nos limites.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="shield" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Terreno e fronteiras</p>
+                            <p class="text-white/50 text-xs italic">O agente conhece o mapa, mas respeita a cerca.</p>
+                        </div>
+                    </div>
+                    <button id="replay-contexto" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="contexto-stage">
+                    <svg id="contexto-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Limites de segurança</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="map" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Contexto</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="lock" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Regras</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 6: Fluxo de Execução ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Fluxo de <span class="primary-color italic">Execução</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Peça crua entra na esteira, sai transformada do outro lado.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="workflow" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Linha de montagem</p>
+                            <p class="text-white/50 text-xs italic">Cada estação executa um passo do fluxo.</p>
+                        </div>
+                    </div>
+                    <button id="replay-fluxo" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="fluxo-stage">
+                    <svg id="fluxo-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Passos obrigatórios</p>
+                    <div class="grid grid-cols-4 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="inbox" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Receber</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="search" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Analisar</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="hammer" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Executar</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="check-circle" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Entregar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 7: O Construct / .venv ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O <span class="primary-color italic">Construct</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Câmara hermética: o caos lá fora não entra aqui.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="flask-conical" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Ambiente virtual isolado</p>
+                            <p class="text-white/50 text-xs italic">Reações seguras dentro da bolha de vidro.</p>
+                        </div>
+                    </div>
+                    <button id="replay-venv" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="venv-stage">
+                    <svg id="venv-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Isolamento total</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="box" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">.venv</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="shield-check" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Seguro</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="split" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Isolado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 8: PreToolUse Hook ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Hook <span class="primary-color italic">PreToolUse</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">A cancela que baixa antes da ação destrutiva.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="shield-alert" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Interceptação preventiva</p>
+                            <p class="text-white/50 text-xs italic">O Smith bloqueia antes de executar.</p>
+                        </div>
+                    </div>
+                    <button id="replay-pretool" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="pretool-stage">
+                    <svg id="pretool-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Bloqueio preventivo</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="octagon" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Bloquear</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="eye" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Inspecionar</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="x-circle" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Rejeitar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 9: PostToolUse Hook ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    Hook <span class="primary-color italic">PostToolUse</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">O fiscal que carimba cada peça na saída da fábrica.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="stamp" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Validação posterior</p>
+                            <p class="text-white/50 text-xs italic">Nenhuma ação sai sem o selo de aprovação.</p>
+                        </div>
+                    </div>
+                    <button id="replay-posttool" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="posttool-stage">
+                    <svg id="posttool-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Controle de qualidade</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="clipboard-check" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Testar</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="badge-check" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Validar</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="send" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Liberar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 10: O Novo Operador ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-3 pb-6">
+        <div class="w-full max-w-6xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="text-center mb-2">
+                <h2 class="text-4xl md:text-5xl font-bold mb-2">
+                    O Novo <span class="primary-color italic">Operador</span>
+                </h2>
+                <p class="text-white/60 italic text-lg md:text-xl">Menos teclado, mais batuta: o maestro da orquestra.</p>
+            </div>
+            <div class="glass-card rounded-2xl p-1 md:p-2">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-[var(--mira-icon-bg)] flex items-center justify-center border border-[var(--mira-icon-border)]">
+                            <i data-lucide="music" class="w-5 h-5 primary-color"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm">Orquestração de agentes</p>
+                            <p class="text-white/50 text-xs italic">O humano rege, os robôs executam em uníssono.</p>
+                        </div>
+                    </div>
+                    <button id="replay-operador" class="replay-btn" type="button">
+                        <i data-lucide="rotate-cw" class="w-4 h-4"></i> Replay
+                    </button>
+                </div>
+                <!-- @MIRA:SIZE 3/10 -->
+                <div class="anim-stage" id="operador-stage">
+                    <svg id="operador-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="border-t border-white/10 pt-1 mt-1 mb-1">
+                    <p class="text-xs uppercase tracking-[3px] text-white/40 text-center mb-1">Nova função do dev</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="wand-2" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Orquestrar</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="users" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Delegar</p>
+                        </div>
+                        <div class="attribute-pill text-center p-1 rounded-xl">
+                            <i data-lucide="crown" class="w-4 h-4 primary-color mx-auto mb-1"></i>
+                            <p class="text-sm font-semibold tracking-wide">Supervisar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        AOS.init({ duration: 800, once: true });
+        lucide.createIcons();
+
+        const cssVar = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+        const PRIMARY = cssVar('--mira-primary');
+        const ACCENT2 = cssVar('--mira-accent-2');
+        const W = 1280, H = 720;
+
+        // ==========================================
+        // ANIMATION 1: Chatbot vs Agente
+        // Metáfora: Máquina de venda (estática) vs Robô aspirador (loop perpétuo)
+        // Loop: O robô aspirador varre o chão sem parar, enquanto a máquina pisca e espera.
+        // ==========================================
+        function animateChatbot() {
+            clearInterval(window.__chatbotPulse);
+            window.__chatbotGen = (window.__chatbotGen || 0) + 1;
+            const myGen = window.__chatbotGen;
+            const svg = d3.select('#chatbot-svg');
+            svg.selectAll('*').remove();
+
+            const cx1 = 360, cx2 = 920, cy = 360;
+
+            // Divisor
+            svg.append('line').attr('x1', 640).attr('y1', 120).attr('x2', 640).attr('y2', 600)
+                .attr('stroke', 'rgba(255,255,255,0.06)').attr('stroke-width', 2).attr('stroke-dasharray', '8 8');
+            svg.append('text').text('CHATBOT').attr('x', cx1).attr('y', 140).attr('text-anchor', 'middle')
+                .attr('fill', 'rgba(255,255,255,0.3)').attr('font-size', 14).attr('font-weight', 700).attr('letter-spacing', 4)
+                .attr('opacity', 0).transition().duration(600).attr('opacity', 1);
+            svg.append('text').text('AGENTE').attr('x', cx2).attr('y', 140).attr('text-anchor', 'middle')
+                .attr('fill', PRIMARY).attr('font-size', 14).attr('font-weight', 700).attr('letter-spacing', 4)
+                .attr('opacity', 0).transition().delay(200).duration(600).attr('opacity', 1);
+
+            // Máquina de venda (lado esquerdo)
+            const maq = svg.append('g').attr('transform', `translate(${cx1},${cy})`);
+            maq.append('rect').attr('x', -70).attr('y', -110).attr('width', 140).attr('height', 220).attr('rx', 12)
+                .attr('fill', 'rgba(255,255,255,0.04)').attr('stroke', 'rgba(255,255,255,0.15)').attr('stroke-width', 2)
+                .attr('opacity', 0).transition().duration(800).ease(d3.easeBackOut).attr('opacity', 1);
+            // Tela
+            maq.append('rect').attr('x', -50).attr('y', -85).attr('width', 100).attr('height', 70).attr('rx', 4)
+                .attr('fill', 'rgba(0,0,0,0.6)').attr('stroke', 'rgba(255,255,255,0.08)');
+            maq.append('text').text('INSIRA').attr('x', 0).attr('y', -52).attr('text-anchor', 'middle')
+                .attr('fill', 'rgba(255,255,255,0.3)').attr('font-size', 12).attr('font-weight', 600);
+            maq.append('text').text('A MOEDA').attr('x', 0).attr('y', -36).attr('text-anchor', 'middle')
+                .attr('fill', 'rgba(255,255,255,0.3)').attr('font-size', 12).attr('font-weight', 600);
+            // Slot da moeda
+            maq.append('rect').attr('x', 30).attr('y', 10).attr('width', 20).attr('height', 4).attr('rx', 2)
+                .attr('fill', 'rgba(255,255,255,0.3)');
+            const luzMoeda = maq.append('circle').attr('cx', 40).attr('cy', 30).attr('r', 6)
+                .attr('fill', 'rgba(255,255,255,0.15)');
+
+            // Pisca esperando (loop)
+            window.__chatbotPulse = setInterval(() => {
+                if (myGen !== window.__chatbotGen) return;
+                luzMoeda.transition().duration(600).attr('fill', 'rgba(255,255,255,0.5)')
+                    .transition().duration(600).attr('fill', 'rgba(255,255,255,0.15)');
+            }, 1800);
+
+            // Robô Aspirador (lado direito, loop perpétuo)
+            const room = svg.append('g').attr('transform', `translate(${cx2},${cy})`);
+            // Sala
+            room.append('rect').attr('x', -180).attr('y', -140).attr('width', 360).attr('height', 280).attr('rx', 8)
+                .attr('fill', 'none').attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-dasharray', '4 6')
+                .attr('opacity', 0).transition().delay(300).duration(600).attr('opacity', 1);
+            // Obstáculos
+            const obs = [[-100, -60], [80, 80], [-40, 100]];
+            obs.forEach((o, i) => {
+                room.append('rect').attr('x', o[0] - 12).attr('y', o[1] - 12).attr('width', 24).attr('height', 24).attr('rx', 4)
+                    .attr('fill', 'rgba(255,255,255,0.05)').attr('stroke', 'rgba(255,255,255,0.1)')
+                    .attr('opacity', 0).transition().delay(400 + i * 100).duration(500).attr('opacity', 1);
+            });
+
+            // Roomba
+            const roomba = room.append('g');
+            roomba.append('circle').attr('r', 28).attr('fill', PRIMARY).attr('opacity', 0.7)
+                .style('filter', `drop-shadow(0 0 12px ${PRIMARY})`);
+            roomba.append('circle').attr('r', 8).attr('fill', 'rgba(0,0,0,0.5)');
+            // Rastro
+            const trailG = room.insert('g', ':first-child');
+            let angle = 0;
+            d3.timer(() => {
+                if (myGen !== window.__chatbotGen) return true;
+                angle += 0.015;
+                const rx = Math.sin(angle * 0.6) * 110;
+                const ry = Math.cos(angle * 0.8) * 80;
+                const heading = Math.atan2(-Math.sin(angle * 0.8) * 0.8, Math.cos(angle * 0.6) * 0.6) * 180 / Math.PI;
+                roomba.attr('transform', `translate(${rx},${ry}) rotate(${heading})`);
+                // Trail
+                trailG.append('circle').attr('cx', rx).attr('cy', ry).attr('r', 3).attr('fill', PRIMARY).attr('opacity', 0.25)
+                    .transition().duration(2000).attr('opacity', 0).attr('r', 0).remove();
+            });
+        }
+
+        // ==========================================
+        // ANIMATION 2: O que é Agent Skill (Cartucho de videogame)
+        // Loop: O cartucho desce, encaixa, dados fluem, sobe e repete.
+        // ==========================================
+        function animateSkill() {
+            clearInterval(window.__skillPulse);
+            window.__skillGen = (window.__skillGen || 0) + 1;
+            const myGen = window.__skillGen;
+            const svg = d3.select('#skill-svg');
+            svg.selectAll('*').remove();
+
+            const cx = 640, slotY = 420;
+
+            // Console (base)
+            const consoleG = svg.append('g');
+            consoleG.append('path')
+                .attr('d', `M${cx - 180},${slotY + 20} L${cx + 180},${slotY + 20} L${cx + 220},${slotY + 120} L${cx - 220},${slotY + 120} Z`)
+                .attr('fill', 'rgba(255,255,255,0.04)').attr('stroke', 'rgba(255,255,255,0.12)').attr('stroke-width', 2)
+                .attr('opacity', 0).transition().duration(800).ease(d3.easeBackOut).attr('opacity', 1);
+            // Slot
+            consoleG.append('rect').attr('x', cx - 60).attr('y', slotY + 6).attr('width', 120).attr('height', 14).attr('rx', 3)
+                .attr('fill', 'rgba(0,0,0,0.8)').attr('stroke', 'rgba(255,255,255,0.1)');
+            // Luz de status
+            const statusLight = consoleG.append('circle').attr('cx', cx).attr('cy', slotY + 70).attr('r', 10)
+                .attr('fill', 'rgba(255,255,255,0.08)').attr('stroke', 'rgba(255,255,255,0.1)');
+
+            // Cartucho
+            const cartucho = svg.append('g');
+            cartucho.append('rect').attr('x', -55).attr('y', -80).attr('width', 110).attr('height', 100).attr('rx', 8)
+                .attr('fill', 'rgba(255,255,255,0.08)').attr('stroke', PRIMARY).attr('stroke-width', 2);
+            // Label
+            cartucho.append('rect').attr('x', -40).attr('y', -65).attr('width', 80).attr('height', 40).attr('rx', 4)
+                .attr('fill', PRIMARY).attr('opacity', 0.15);
+            cartucho.append('text').text('SKILL.md').attr('x', 0).attr('y', -40).attr('text-anchor', 'middle')
+                .attr('fill', PRIMARY).attr('font-weight', 800).attr('font-size', 13);
+            // Pinos
+            for (let i = 0; i < 5; i++) {
+                cartucho.append('rect').attr('x', -32 + i * 16).attr('y', 16).attr('width', 6).attr('height', 14).attr('rx', 1)
+                    .attr('fill', ACCENT2).attr('opacity', 0.6);
+            }
+
+            function insertLoop() {
+                if (myGen !== window.__skillGen) return;
+                // Cartucho desce
+                cartucho.attr('transform', `translate(${cx}, ${slotY - 250})`)
+                    .transition().duration(900).ease(d3.easeBounceOut)
+                    .attr('transform', `translate(${cx}, ${slotY - 60})`)
+                    .on('end', () => {
+                        if (myGen !== window.__skillGen) return;
+                        // Status liga
+                        statusLight.transition().duration(300)
+                            .attr('fill', PRIMARY).style('filter', `drop-shadow(0 0 20px ${PRIMARY})`);
+                        // Ondas de dados
+                        for (let i = 0; i < 3; i++) {
+                            svg.append('circle').attr('cx', cx).attr('cy', slotY + 20)
+                                .attr('r', 20).attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-width', 3).attr('opacity', 0.6)
+                                .transition().delay(i * 250).duration(1200).ease(d3.easeCubicOut)
+                                .attr('r', 200).attr('opacity', 0).remove();
+                        }
+                        setTimeout(() => {
+                            if (myGen !== window.__skillGen) return;
+                            statusLight.transition().duration(400).attr('fill', 'rgba(255,255,255,0.08)').style('filter', 'none');
+                            cartucho.transition().duration(700).ease(d3.easeCubicIn)
+                                .attr('transform', `translate(${cx}, ${slotY - 250})`)
+                                .on('end', () => setTimeout(insertLoop, 600));
+                        }, 1800);
+                    });
+            }
+            setTimeout(insertLoop, 500);
+        }
+
+        // ==========================================
+        // ANIMATION 3: Skill vs MCP (Cérebro pulsante vs Chave/Fechadura)
+        // Loop: O cérebro pulsa com sinapses; a chave gira e abre a porta ciclicamente.
+        // ==========================================
+        function animateMcp() {
+            clearInterval(window.__mcpPulse);
+            window.__mcpGen = (window.__mcpGen || 0) + 1;
+            const myGen = window.__mcpGen;
+            const svg = d3.select('#mcp-svg');
+            svg.selectAll('*').remove();
+
+            const cx1 = 360, cx2 = 920, cy = 360;
+
+            // Labels
+            svg.append('text').text('SKILL').attr('x', cx1).attr('y', 160).attr('text-anchor', 'middle')
+                .attr('fill', PRIMARY).attr('font-size', 13).attr('font-weight', 700).attr('letter-spacing', 4)
+                .attr('opacity', 0).transition().duration(600).attr('opacity', 1);
+            svg.append('text').text('MCP').attr('x', cx2).attr('y', 160).attr('text-anchor', 'middle')
+                .attr('fill', ACCENT2).attr('font-size', 13).attr('font-weight', 700).attr('letter-spacing', 4)
+                .attr('opacity', 0).transition().delay(200).duration(600).attr('opacity', 1);
+
+            // VS
+            svg.append('text').text('vs').attr('x', 640).attr('y', cy + 6).attr('text-anchor', 'middle')
+                .attr('fill', 'rgba(255,255,255,0.15)').attr('font-size', 28).attr('font-weight', 900);
+
+            // ---- CÉREBRO (Skill = saber como) ----
+            const brainG = svg.append('g').attr('transform', `translate(${cx1},${cy})`);
+            // Órbitas de sinapses
+            const orbits = [70, 110, 150];
+            orbits.forEach((r, i) => {
+                brainG.append('circle').attr('r', 0).attr('fill', 'none')
+                    .attr('stroke', PRIMARY).attr('stroke-opacity', 0.1 + i * 0.05).attr('stroke-dasharray', '4 8')
+                    .transition().delay(200 + i * 200).duration(600).ease(d3.easeBackOut).attr('r', r);
+            });
+            // Núcleo
+            const core = brainG.append('circle').attr('r', 0).attr('fill', PRIMARY).attr('opacity', 0.3)
+                .style('filter', `drop-shadow(0 0 25px ${PRIMARY})`)
+                .transition().duration(800).ease(d3.easeBackOut).attr('r', 40);
+            brainG.append('text').text('SABER').attr('text-anchor', 'middle').attr('dy', 5)
+                .attr('fill', '#fff').attr('font-size', 14).attr('font-weight', 800)
+                .attr('opacity', 0).transition().delay(500).duration(400).attr('opacity', 1);
+
+            // Sinapses orbitando (loop)
+            const synapses = d3.range(8).map(i => ({
+                orbit: orbits[i % 3], angle: (i / 8) * Math.PI * 2, speed: 0.008 + Math.random() * 0.006
+            }));
+            const synDots = brainG.selectAll('circle.syn').data(synapses).join('circle').attr('class', 'syn')
+                .attr('r', 4).attr('fill', PRIMARY).attr('opacity', 0);
+            synDots.transition().delay((d, i) => 600 + i * 100).duration(400).attr('opacity', 0.7);
+
+            // Pulso do núcleo (loop)
+            const pulseCircle = brainG.append('circle').attr('r', 40).attr('fill', 'none').attr('stroke', PRIMARY).attr('opacity', 0);
+            window.__mcpPulse = setInterval(() => {
+                if (myGen !== window.__mcpGen) return;
+                pulseCircle.attr('r', 40).attr('opacity', 0.5)
+                    .transition().duration(1400).ease(d3.easeCubicOut).attr('r', 100).attr('opacity', 0);
+            }, 2000);
+
+            d3.timer(() => {
+                if (myGen !== window.__mcpGen) return true;
+                synDots.attr('cx', d => { d.angle += d.speed; return Math.cos(d.angle) * d.orbit; })
+                    .attr('cy', d => Math.sin(d.angle) * d.orbit * 0.65);
+            });
+
+            // ---- PORTA + CHAVE (MCP = acesso) ----
+            const doorG = svg.append('g').attr('transform', `translate(${cx2},${cy})`);
+            // Porta
+            doorG.append('rect').attr('x', -50).attr('y', -90).attr('width', 100).attr('height', 180).attr('rx', 8)
+                .attr('fill', 'rgba(255,255,255,0.04)').attr('stroke', 'rgba(255,255,255,0.15)').attr('stroke-width', 2)
+                .attr('opacity', 0).transition().delay(300).duration(600).ease(d3.easeBackOut).attr('opacity', 1);
+            // Fechadura
+            doorG.append('circle').attr('cx', 20).attr('cy', 0).attr('r', 10)
+                .attr('fill', 'rgba(0,0,0,0.6)').attr('stroke', ACCENT2).attr('stroke-width', 2);
+            doorG.append('text').text('ACESSAR').attr('x', 0).attr('y', 120).attr('text-anchor', 'middle')
+                .attr('fill', 'rgba(255,255,255,0.3)').attr('font-size', 12).attr('font-weight', 600);
+
+            // Chave
+            const chaveG = svg.append('g');
+            chaveG.append('circle').attr('cx', -18).attr('cy', 0).attr('r', 12).attr('fill', 'none')
+                .attr('stroke', ACCENT2).attr('stroke-width', 4);
+            chaveG.append('path').attr('d', 'M-6,0 L35,0 M25,-6 L35,0 L25,6 M18,-5 L28,0 L18,5')
+                .attr('fill', 'none').attr('stroke', ACCENT2).attr('stroke-width', 3).attr('stroke-linecap', 'round');
+
+            function keyLoop() {
+                if (myGen !== window.__mcpGen) return;
+                chaveG.attr('transform', `translate(${cx2 + 130},${cy})`)
+                    .transition().duration(700).ease(d3.easeQuadInOut)
+                    .attr('transform', `translate(${cx2 + 30},${cy})`)
+                    .transition().duration(500)
+                    .attr('transform', `translate(${cx2 + 30},${cy}) rotate(90, 0, 0)`)
+                    .on('end', () => {
+                        if (myGen !== window.__mcpGen) return;
+                        // Glow na porta
+                        doorG.select('rect')
+                            .transition().duration(400).attr('fill', `rgba(255,199,102,0.08)`)
+                            .style('filter', `drop-shadow(0 0 15px ${ACCENT2})`)
+                            .transition().delay(800).duration(400).attr('fill', 'rgba(255,255,255,0.04)')
+                            .style('filter', 'none');
+                        setTimeout(() => {
+                            if (myGen !== window.__mcpGen) return;
+                            chaveG.transition().duration(400)
+                                .attr('transform', `translate(${cx2 + 30},${cy}) rotate(0, 0, 0)`)
+                                .transition().duration(600)
+                                .attr('transform', `translate(${cx2 + 130},${cy})`)
+                                .on('end', () => setTimeout(keyLoop, 800));
+                        }, 1200);
+                    });
+            }
+            setTimeout(keyLoop, 800);
+        }
+
+        // ==========================================
+        // ANIMATION 4: Frontmatter e Trigger (Alarme de incêndio)
+        // Loop: Martelinho bate no vidro, ondas de alerta se propagam ciclicamente.
+        // ==========================================
+        function animateTrigger() {
+            clearInterval(window.__triggerPulse);
+            window.__triggerGen = (window.__triggerGen || 0) + 1;
+            const myGen = window.__triggerGen;
+            const svg = d3.select('#trigger-svg');
+            svg.selectAll('*').remove();
+
+            const cx = 640, cy = 350;
+
+            // Caixa do alarme
+            const alarme = svg.append('g').attr('transform', `translate(${cx},${cy})`);
+            alarme.append('rect').attr('x', -70).attr('y', -70).attr('width', 140).attr('height', 140).attr('rx', 16)
+                .attr('fill', 'rgba(255,144,77,0.06)').attr('stroke', PRIMARY).attr('stroke-width', 2)
+                .attr('opacity', 0).transition().duration(800).ease(d3.easeBackOut).attr('opacity', 1);
+            // Vidro
+            const vidro = alarme.append('circle').attr('r', 0).attr('fill', 'rgba(255,255,255,0.06)')
+                .attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 2)
+                .transition().delay(300).duration(600).ease(d3.easeBackOut).attr('r', 42);
+            // Label
+            alarme.append('text').text('YAML').attr('text-anchor', 'middle').attr('dy', 5)
+                .attr('fill', PRIMARY).attr('font-size', 14).attr('font-weight', 800)
+                .attr('opacity', 0).transition().delay(600).duration(400).attr('opacity', 1);
+
+            // Martelinho (trigger)
+            const pivotX = cx + 120, pivotY = cy;
+            const martelo = svg.append('g').attr('transform-origin', `${pivotX}px ${pivotY}px`);
+            martelo.append('rect').attr('x', pivotX).attr('y', pivotY - 3).attr('width', 50).attr('height', 6).attr('rx', 2)
+                .attr('fill', 'rgba(255,255,255,0.4)');
+            martelo.append('rect').attr('x', pivotX - 18).attr('y', pivotY - 12).attr('width', 18).attr('height', 24).attr('rx', 3)
+                .attr('fill', 'rgba(255,255,255,0.6)');
+
+            function hammerLoop() {
+                if (myGen !== window.__triggerGen) return;
+                martelo.attr('transform', `rotate(0, ${pivotX}, ${pivotY})`)
+                    .transition().duration(400).ease(d3.easeCubicIn)
+                    .attr('transform', `rotate(-40, ${pivotX}, ${pivotY})`)
+                    .transition().duration(120).ease(d3.easeBounceOut)
+                    .attr('transform', `rotate(5, ${pivotX}, ${pivotY})`)
+                    .on('end', () => {
+                        if (myGen !== window.__triggerGen) return;
+                        // Ondas de alerta
+                        for (let i = 0; i < 4; i++) {
+                            alarme.append('circle').attr('r', 42).attr('fill', 'none')
+                                .attr('stroke', PRIMARY).attr('stroke-width', 5 - i).attr('opacity', 0.6)
+                                .transition().delay(i * 200).duration(1200).ease(d3.easeCubicOut)
+                                .attr('r', 250 + i * 30).attr('opacity', 0).remove();
+                        }
+                        // Volta martelinho
+                        setTimeout(() => {
+                            if (myGen !== window.__triggerGen) return;
+                            martelo.transition().duration(500).ease(d3.easeQuadOut)
+                                .attr('transform', `rotate(0, ${pivotX}, ${pivotY})`)
+                                .on('end', () => setTimeout(hammerLoop, 800));
+                        }, 1500);
+                    });
+            }
+            setTimeout(hammerLoop, 1000);
+        }
+
+        // ==========================================
+        // ANIMATION 5: Contexto e Regras (Mapa + Cerca Elétrica)
+        // Loop: Radar varre o mapa internamente, cerca solta faíscas nos cantos.
+        // ==========================================
+        function animateContexto() {
+            clearInterval(window.__contextoPulse);
+            window.__contextoGen = (window.__contextoGen || 0) + 1;
+            const myGen = window.__contextoGen;
+            const svg = d3.select('#contexto-svg');
+            svg.selectAll('*').remove();
+
+            const cx = 640, cy = 360, mapW = 400, mapH = 240;
+
+            // Mapa (contexto)
+            const mapa = svg.append('g').attr('transform', `translate(${cx},${cy})`);
+            mapa.append('rect').attr('x', -mapW / 2).attr('y', -mapH / 2).attr('width', mapW).attr('height', mapH).attr('rx', 12)
+                .attr('fill', 'rgba(255,255,255,0.02)').attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 1)
+                .attr('opacity', 0).transition().duration(800).ease(d3.easeBackOut).attr('opacity', 1);
+
+            // Pontos de interesse
+            const pois = [[-120, -60], [80, -80], [-60, 70], [140, 50], [0, -20]];
+            pois.forEach((p, i) => {
+                mapa.append('circle').attr('cx', p[0]).attr('cy', p[1]).attr('r', 0)
+                    .attr('fill', PRIMARY).attr('opacity', 0.7)
+                    .transition().delay(400 + i * 120).duration(500).ease(d3.easeBackOut).attr('r', 5);
+            });
+
+            // Radar (loop perpétuo)
+            const radarSweep = mapa.append('path')
+                .attr('d', `M0,0 L0,-${mapH / 2} A${mapH / 2},${mapH / 2} 0 0,1 ${mapH / 2 * Math.sin(Math.PI / 4)},${-mapH / 2 * Math.cos(Math.PI / 4)} Z`)
+                .attr('fill', PRIMARY).attr('opacity', 0.08);
+            let radarAngle = 0;
+            d3.timer(() => {
+                if (myGen !== window.__contextoGen) return true;
+                radarAngle = (radarAngle + 1.5) % 360;
+                radarSweep.attr('transform', `rotate(${radarAngle})`);
+            });
+
+            // Cerca elétrica (regras) ao redor do mapa
+            const cercaMargin = 30;
+            const cX = -mapW / 2 - cercaMargin, cY = -mapH / 2 - cercaMargin;
+            const cW = mapW + cercaMargin * 2, cH = mapH + cercaMargin * 2;
+            const cerca = mapa.append('rect').attr('x', cX).attr('y', cY)
+                .attr('width', cW).attr('height', cH).attr('rx', 16)
+                .attr('fill', 'none').attr('stroke', ACCENT2).attr('stroke-width', 2)
+                .attr('stroke-dasharray', '12 8').attr('opacity', 0.3);
+
+            // Faíscas nos cantos (loop)
+            const cantos = [[cX, cY], [cX + cW, cY], [cX, cY + cH], [cX + cW, cY + cH]];
+            window.__contextoPulse = setInterval(() => {
+                if (myGen !== window.__contextoGen) return;
+                cerca.transition().duration(80).attr('stroke-width', 5).attr('opacity', 0.8)
+                    .style('filter', `drop-shadow(0 0 8px ${ACCENT2})`)
+                    .transition().duration(200).attr('stroke-width', 2).attr('opacity', 0.3)
+                    .style('filter', 'none');
+                cantos.forEach((c, i) => {
+                    mapa.append('circle').attr('cx', c[0]).attr('cy', c[1]).attr('r', 3)
+                        .attr('fill', ACCENT2).attr('opacity', 0.8)
+                        .style('filter', `drop-shadow(0 0 10px ${ACCENT2})`)
+                        .transition().delay(i * 60).duration(500).attr('r', 18).attr('opacity', 0).remove();
+                });
+            }, 2200);
+        }
+
+        // ==========================================
+        // ANIMATION 6: Fluxo de Execução (Esteira de Montagem)
+        // Loop: Uma peça cruza 4 estações e sai transformada, repete infinitamente.
+        // ==========================================
+        function animateFluxo() {
+            clearInterval(window.__fluxoPulse);
+            window.__fluxoGen = (window.__fluxoGen || 0) + 1;
+            const myGen = window.__fluxoGen;
+            const svg = d3.select('#fluxo-svg');
+            svg.selectAll('*').remove();
+
+            const cy = 380, stationLabels = ['Receber', 'Analisar', 'Executar', 'Entregar'];
+            const xs = d3.scalePoint().domain(d3.range(4)).range([200, 1080]);
+
+            // Esteira
+            svg.append('line').attr('x1', 140).attr('x2', 1140).attr('y1', cy).attr('y2', cy)
+                .attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 3);
+            // Rolinhos da esteira (loop visual)
+            for (let i = 0; i < 22; i++) {
+                svg.append('circle').attr('cx', 150 + i * 48).attr('cy', cy).attr('r', 6)
+                    .attr('fill', 'rgba(255,255,255,0.06)').attr('stroke', 'rgba(255,255,255,0.1)');
+            }
+
+            // Estações (braços mecânicos)
+            stationLabels.forEach((label, i) => {
+                const x = xs(i);
+                // Poste
+                svg.append('rect').attr('x', x - 6).attr('y', cy - 160).attr('width', 12).attr('height', 100).attr('rx', 3)
+                    .attr('fill', 'rgba(255,255,255,0.1)')
+                    .attr('opacity', 0).transition().delay(200 + i * 200).duration(600).ease(d3.easeBackOut).attr('opacity', 1);
+                // Cabeça
+                svg.append('rect').attr('x', x - 16).attr('y', cy - 64).attr('width', 32).attr('height', 8).attr('rx', 2)
+                    .attr('fill', PRIMARY).attr('opacity', 0.6)
+                    .attr('transform', `translate(0, -20)`).transition().delay(400 + i * 200).duration(500)
+                    .ease(d3.easeBackOut).attr('transform', 'translate(0,0)');
+                // Número
+                svg.append('text').text(i + 1).attr('x', x).attr('y', cy - 100).attr('text-anchor', 'middle')
+                    .attr('fill', PRIMARY).attr('font-size', 20).attr('font-weight', 800)
+                    .attr('opacity', 0).transition().delay(500 + i * 200).duration(400).attr('opacity', 1);
+                // Label
+                svg.append('text').text(label).attr('x', x).attr('y', cy + 50).attr('text-anchor', 'middle')
+                    .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 13).attr('font-weight', 600)
+                    .attr('opacity', 0).transition().delay(600 + i * 200).duration(400).attr('opacity', 1);
+            });
+
+            // Peça viajando (loop)
+            const piece = svg.append('rect').attr('width', 36).attr('height', 36).attr('rx', 6)
+                .attr('fill', 'rgba(255,255,255,0.7)').attr('y', cy - 52);
+            const glow = svg.append('circle').attr('r', 0).attr('fill', PRIMARY).attr('opacity', 0);
+
+            function travel() {
+                if (myGen !== window.__fluxoGen) return;
+                piece.attr('x', 120).attr('fill', 'rgba(255,255,255,0.7)').attr('rx', 6)
+                    .style('filter', 'none').attr('opacity', 1);
+
+                let t = piece.transition().duration(600).ease(d3.easeQuadInOut).attr('x', xs(0) - 18);
+                // Station 1: color change
+                t = t.transition().duration(350).attr('fill', PRIMARY).attr('opacity', 0.9);
+                t = t.transition().duration(600).ease(d3.easeQuadInOut).attr('x', xs(1) - 18);
+                // Station 2: round corners
+                t = t.transition().duration(350).attr('rx', 18);
+                t = t.transition().duration(600).ease(d3.easeQuadInOut).attr('x', xs(2) - 18);
+                // Station 3: glow
+                t = t.transition().duration(350).style('filter', `drop-shadow(0 0 15px ${PRIMARY})`);
+                t = t.transition().duration(600).ease(d3.easeQuadInOut).attr('x', xs(3) - 18);
+                // Station 4: shrink and vanish
+                t = t.transition().duration(500).attr('x', 1160).attr('opacity', 0)
+                    .on('end', () => setTimeout(travel, 400));
+            }
+            setTimeout(travel, 1200);
+
+            // Estações pulsando (loop)
+            window.__fluxoPulse = setInterval(() => {
+                if (myGen !== window.__fluxoGen) return;
+                stationLabels.forEach((_, i) => {
+                    const x = xs(i);
+                    svg.append('circle').attr('cx', x).attr('cy', cy - 60).attr('r', 8)
+                        .attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-width', 2).attr('opacity', 0.4)
+                        .transition().delay(i * 150).duration(800).attr('r', 28).attr('opacity', 0).remove();
+                });
+            }, 3000);
+        }
+
+        // ==========================================
+        // ANIMATION 7: O Construct / .venv (Câmara Hermética)
+        // Loop: Bolhas sobem dentro da câmara, estilhaços explodem fora sem afetá-la.
+        // ==========================================
+        function animateVenv() {
+            clearInterval(window.__venvBubble);
+            clearInterval(window.__venvExplosion);
+            window.__venvGen = (window.__venvGen || 0) + 1;
+            const myGen = window.__venvGen;
+            const svg = d3.select('#venv-svg');
+            svg.selectAll('*').remove();
+
+            const cx = 640, cy = 360, R = 160;
+
+            // Defs para clipping
+            const defs = svg.append('defs');
+            defs.append('clipPath').attr('id', 'dome-clip')
+                .append('circle').attr('cx', cx).attr('cy', cy).attr('r', R);
+
+            // Bolha de vidro
+            svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 0)
+                .attr('fill', 'rgba(255,255,255,0.02)').attr('stroke', 'rgba(255,255,255,0.2)').attr('stroke-width', 3)
+                .transition().duration(1000).ease(d3.easeBackOut).attr('r', R);
+            // Reflexo
+            svg.append('path')
+                .attr('d', `M${cx - R * 0.65},${cy - R * 0.65} Q${cx - R * 0.3},${cy - R * 0.9} ${cx + R * 0.3},${cy - R * 0.8}`)
+                .attr('fill', 'none').attr('stroke', 'rgba(255,255,255,0.12)').attr('stroke-width', 6).attr('stroke-linecap', 'round')
+                .attr('opacity', 0).transition().delay(600).duration(600).attr('opacity', 1);
+
+            // Tubos dentro
+            const innerG = svg.append('g').attr('clip-path', 'url(#dome-clip)');
+            // Tubo 1
+            innerG.append('rect').attr('x', cx - 60).attr('y', cy + 40).attr('width', 30).attr('height', 90).attr('rx', 8)
+                .attr('fill', 'rgba(255,255,255,0.06)').attr('stroke', 'rgba(255,255,255,0.1)');
+            innerG.append('rect').attr('x', cx - 56).attr('y', cy + 70).attr('width', 22).attr('height', 56).attr('rx', 4)
+                .attr('fill', PRIMARY).attr('opacity', 0.4);
+            // Tubo 2
+            innerG.append('rect').attr('x', cx + 30).attr('y', cy + 60).attr('width', 24).attr('height', 70).attr('rx', 8)
+                .attr('fill', 'rgba(255,255,255,0.06)').attr('stroke', 'rgba(255,255,255,0.1)');
+            innerG.append('rect').attr('x', cx + 34).attr('y', cy + 80).attr('width', 16).attr('height', 46).attr('rx', 4)
+                .attr('fill', ACCENT2).attr('opacity', 0.4);
+
+            // Bolhas subindo dentro (loop)
+            window.__venvBubble = setInterval(() => {
+                if (myGen !== window.__venvGen) return;
+                const bx = cx - 60 + Math.random() * 120;
+                innerG.append('circle').attr('cx', bx).attr('cy', cy + 120).attr('r', 2 + Math.random() * 5)
+                    .attr('fill', PRIMARY).attr('opacity', 0.5)
+                    .transition().duration(1800 + Math.random() * 1200).ease(d3.easeQuadOut)
+                    .attr('cy', cy - R + 20).attr('opacity', 0).remove();
+            }, 250);
+
+            // Explosões fora (loop)
+            window.__venvExplosion = setInterval(() => {
+                if (myGen !== window.__venvGen) return;
+                const side = Math.random() < 0.5 ? -1 : 1;
+                const ex = cx + side * (R + 80 + Math.random() * 150);
+                const ey = cy - 60 + Math.random() * 200;
+                // Estilhaços
+                for (let i = 0; i < 5; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    svg.append('line').attr('x1', ex).attr('y1', ey)
+                        .attr('x2', ex + Math.cos(ang) * 8).attr('y2', ey + Math.sin(ang) * 8)
+                        .attr('stroke', 'rgba(255,255,255,0.4)').attr('stroke-width', 2)
+                        .transition().duration(400)
+                        .attr('x2', ex + Math.cos(ang) * 40).attr('y2', ey + Math.sin(ang) * 40)
+                        .attr('opacity', 0).remove();
+                }
+                svg.append('circle').attr('cx', ex).attr('cy', ey).attr('r', 4)
+                    .attr('fill', 'rgba(255,255,255,0.3)')
+                    .transition().duration(300).attr('r', 25).attr('opacity', 0).remove();
+            }, 900);
+        }
+
+        // ==========================================
+        // ANIMATION 8: PreToolUse Hook (Cancela de Pedágio)
+        // Loop: Carro se aproxima, cancela baixa, carro recua, repete.
+        // ==========================================
+        function animatePretool() {
+            clearInterval(window.__pretoolPulse);
+            window.__pretoolGen = (window.__pretoolGen || 0) + 1;
+            const myGen = window.__pretoolGen;
+            const svg = d3.select('#pretool-svg');
+            svg.selectAll('*').remove();
+
+            const gateX = 640, cy = 400;
+
+            // Estrada
+            svg.append('rect').attr('x', 0).attr('y', cy - 20).attr('width', 1280).attr('height', 120)
+                .attr('fill', 'rgba(255,255,255,0.03)');
+            // Faixa central
+            for (let i = 0; i < 20; i++) {
+                svg.append('rect').attr('x', 10 + i * 68).attr('y', cy + 30).attr('width', 40).attr('height', 6).attr('rx', 2)
+                    .attr('fill', 'rgba(255,255,255,0.1)');
+            }
+
+            // Poste da cancela
+            svg.append('rect').attr('x', gateX - 8).attr('y', cy - 180).attr('width', 16).attr('height', 180).attr('rx', 4)
+                .attr('fill', 'rgba(255,255,255,0.15)')
+                .attr('opacity', 0).transition().duration(600).ease(d3.easeBackOut).attr('opacity', 1);
+
+            // Semáforo
+            const semaforo = svg.append('circle').attr('cx', gateX).attr('cy', cy - 200).attr('r', 18)
+                .attr('fill', PRIMARY).attr('opacity', 0.8)
+                .style('filter', `drop-shadow(0 0 20px ${PRIMARY})`);
+
+            // Cancela (braço horizontal)
+            const cancela = svg.append('rect').attr('x', gateX + 8).attr('y', cy - 150).attr('width', 240).attr('height', 12).attr('rx', 4)
+                .attr('fill', PRIMARY).attr('opacity', 0.8)
+                .attr('transform-origin', `${gateX + 8}px ${cy - 144}px`);
+
+            // Carro (agente)
+            const carro = svg.append('g');
+            carro.append('rect').attr('x', -55).attr('y', -22).attr('width', 110).attr('height', 44).attr('rx', 12)
+                .attr('fill', 'rgba(255,255,255,0.15)').attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 2);
+            carro.append('rect').attr('x', -35).attr('y', -30).attr('width', 60).attr('height', 16).attr('rx', 6)
+                .attr('fill', 'rgba(255,255,255,0.08)');
+            // Faróis
+            carro.append('circle').attr('cx', 50).attr('cy', -8).attr('r', 5).attr('fill', PRIMARY).attr('opacity', 0.7);
+            carro.append('circle').attr('cx', 50).attr('cy', 8).attr('r', 5).attr('fill', PRIMARY).attr('opacity', 0.7);
+
+            function blockLoop() {
+                if (myGen !== window.__pretoolGen) return;
+                // Carro avança
+                carro.attr('transform', `translate(${gateX - 400},${cy + 10})`)
+                    .transition().duration(1000).ease(d3.easeCubicOut)
+                    .attr('transform', `translate(${gateX - 100},${cy + 10})`)
+                    .on('end', () => {
+                        if (myGen !== window.__pretoolGen) return;
+                        // Semáforo pulsa
+                        semaforo.transition().duration(100).attr('r', 24)
+                            .style('filter', `drop-shadow(0 0 35px ${PRIMARY})`)
+                            .transition().duration(100).attr('r', 18)
+                            .style('filter', `drop-shadow(0 0 20px ${PRIMARY})`);
+                        // Onda de bloqueio
+                        svg.append('circle').attr('cx', gateX).attr('cy', cy - 144).attr('r', 10)
+                            .attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-width', 3).attr('opacity', 0.5)
+                            .transition().duration(800).attr('r', 80).attr('opacity', 0).remove();
+                        // Carro recua
+                        carro.transition().delay(600).duration(800).ease(d3.easeCubicInOut)
+                            .attr('transform', `translate(${gateX - 450},${cy + 10})`)
+                            .on('end', () => setTimeout(blockLoop, 800));
+                    });
+            }
+            setTimeout(blockLoop, 800);
+
+            // Semáforo pulsando suave (loop contínuo)
+            window.__pretoolPulse = setInterval(() => {
+                if (myGen !== window.__pretoolGen) return;
+                semaforo.transition().duration(400).attr('opacity', 1)
+                    .transition().duration(400).attr('opacity', 0.6);
+            }, 1200);
+        }
+
+        // ==========================================
+        // ANIMATION 9: PostToolUse Hook (Fiscal com Carimbo)
+        // Loop: Bloco chega na esteira, braço carimba, selo aparece, segue e repete.
+        // ==========================================
+        function animatePosttool() {
+            clearInterval(window.__posttoolPulse);
+            window.__posttoolGen = (window.__posttoolGen || 0) + 1;
+            const myGen = window.__posttoolGen;
+            const svg = d3.select('#posttool-svg');
+            svg.selectAll('*').remove();
+
+            const cx = 640, beltY = 420;
+
+            // Esteira
+            svg.append('line').attr('x1', 100).attr('x2', 1180).attr('y1', beltY).attr('y2', beltY)
+                .attr('stroke', 'rgba(255,255,255,0.1)').attr('stroke-width', 4);
+            for (let i = 0; i < 24; i++) {
+                svg.append('circle').attr('cx', 120 + i * 46).attr('cy', beltY).attr('r', 5)
+                    .attr('fill', 'rgba(255,255,255,0.06)').attr('stroke', 'rgba(255,255,255,0.08)');
+            }
+
+            // Braço do carimbo
+            const armG = svg.append('g');
+            armG.append('rect').attr('x', cx - 10).attr('y', 80).attr('width', 20).attr('height', 180).attr('rx', 4)
+                .attr('fill', 'rgba(255,255,255,0.12)');
+            const stamper = armG.append('rect').attr('x', cx - 35).attr('y', 256).attr('width', 70).attr('height', 24).attr('rx', 6)
+                .attr('fill', PRIMARY).attr('opacity', 0.7);
+
+            // Label do braço
+            svg.append('text').text('FISCAL').attr('x', cx).attr('y', 60).attr('text-anchor', 'middle')
+                .attr('fill', 'rgba(255,255,255,0.25)').attr('font-size', 11).attr('font-weight', 700).attr('letter-spacing', 3);
+
+            // Bloco (código a ser validado)
+            const bloco = svg.append('rect').attr('width', 80).attr('height', 60).attr('rx', 8)
+                .attr('fill', 'rgba(255,255,255,0.6)');
+            const selo = svg.append('text').text('OK').attr('fill', PRIMARY).attr('font-weight', 900)
+                .attr('font-size', 22).attr('text-anchor', 'middle').attr('opacity', 0)
+                .style('filter', `drop-shadow(0 0 8px ${PRIMARY})`);
+
+            function stampLoop() {
+                if (myGen !== window.__posttoolGen) return;
+                bloco.attr('x', 100).attr('y', beltY - 60).attr('fill', 'rgba(255,255,255,0.6)');
+                selo.attr('opacity', 0);
+
+                bloco.transition().duration(1200).ease(d3.easeLinear).attr('x', cx - 40)
+                    .on('end', () => {
+                        if (myGen !== window.__posttoolGen) return;
+                        // Braço desce e carimba
+                        armG.transition().duration(200).ease(d3.easeCubicIn)
+                            .attr('transform', `translate(0, ${beltY - 280})`)
+                            .on('end', () => {
+                                if (myGen !== window.__posttoolGen) return;
+                                // Selo aparece
+                                selo.attr('x', cx).attr('y', beltY - 22).attr('opacity', 1);
+                                // Onda de impacto
+                                svg.append('circle').attr('cx', cx).attr('cy', beltY - 30).attr('r', 10)
+                                    .attr('fill', 'none').attr('stroke', PRIMARY).attr('stroke-width', 3).attr('opacity', 0.6)
+                                    .transition().duration(600).attr('r', 60).attr('opacity', 0).remove();
+                                // Braço sobe
+                                armG.transition().delay(100).duration(400).ease(d3.easeCubicOut)
+                                    .attr('transform', 'translate(0, 0)');
+                                // Bloco segue
+                                bloco.transition().delay(300).duration(1200).ease(d3.easeLinear).attr('x', 1200);
+                                selo.transition().delay(300).duration(1200).ease(d3.easeLinear)
+                                    .attr('x', cx + 1160).attr('opacity', 0)
+                                    .on('end', () => setTimeout(stampLoop, 400));
+                            });
+                    });
+            }
+            setTimeout(stampLoop, 600);
+        }
+
+        // ==========================================
+        // ANIMATION 10: O Novo Operador (Maestro + Orquestra de Robôs)
+        // Loop: Batuta balança, ondas sonoras pulsam, robôs respondem em uníssono.
+        // ==========================================
+        function animateOperador() {
+            // Limpa loops/timers antigos da mesma animação
+            clearInterval(window.__operadorPulse);
+            if (window.__operadorTimers) {
+                window.__operadorTimers.forEach(t => clearTimeout(t));
+            }
+            window.__operadorTimers = [];
+
+            window.__operadorGen = (window.__operadorGen || 0) + 1;
+            const myGen = window.__operadorGen;
+            const svg = d3.select('#operador-svg');
+            svg.selectAll('*').remove();
+
+            const cx = 640;
+            const cy = 520; // Condutor na parte inferior
+
+            const sections = [
+                {
+                    name: 'Cérebro',
+                    radius: 170,
+                    color: PRIMARY,
+                    nodes: [
+                        { icon: 'brain', label: 'Decidir', angle: -140 },
+                        { icon: 'cpu', label: 'Processar', angle: -110 },
+                        { icon: 'terminal', label: 'Executar', angle: -70 },
+                        { icon: 'code', label: 'Codificar', angle: -40 }
+                    ]
+                },
+                {
+                    name: 'Ação',
+                    radius: 270,
+                    color: ACCENT2,
+                    nodes: [
+                        { icon: 'search', label: 'Buscar', angle: -150 },
+                        { icon: 'file-text', label: 'Ler', angle: -120 },
+                        { icon: 'file-edit', label: 'Editar', angle: -90 },
+                        { icon: 'database', label: 'Dados', angle: -60 },
+                        { icon: 'wrench', label: 'Ferramenta', angle: -30 }
+                    ]
+                },
+                {
+                    name: 'Integração',
+                    radius: 370,
+                    color: '#FFD700', // Gold accent
+                    nodes: [
+                        { icon: 'globe', label: 'Web', angle: -160 },
+                        { icon: 'git-branch', label: 'Git', angle: -132 },
+                        { icon: 'message-square', label: 'Chat', angle: -104 },
+                        { icon: 'mail', label: 'Email', angle: -76 },
+                        { icon: 'shield-check', label: 'Segurança', angle: -48 },
+                        { icon: 'award', label: 'Meta', angle: -20 }
+                    ]
+                }
+            ];
+
+            // Desenha arcos de fundo como pautas de música
+            sections.forEach(sec => {
+                const arcPath = d3.path();
+                const startAngleRad = -170 * Math.PI / 180;
+                const endAngleRad = -10 * Math.PI / 180;
+                arcPath.arc(cx, cy, sec.radius, startAngleRad, endAngleRad);
+
+                svg.append('path')
+                    .attr('d', arcPath.toString())
+                    .attr('fill', 'none')
+                    .attr('stroke', sec.color)
+                    .attr('stroke-width', 1.5)
+                    .attr('stroke-dasharray', '4 8')
+                    .attr('opacity', 0.15);
+            });
+
+            const nodeElements = [];
+
+            sections.forEach((sec, secIdx) => {
+                sec.nodes.forEach((node, nodeIdx) => {
+                    const angRad = node.angle * Math.PI / 180;
+                    const rx = cx + sec.radius * Math.cos(angRad);
+                    const ry = cy + sec.radius * Math.sin(angRad);
+
+                    const nodeG = svg.append('g')
+                        .attr('transform', `translate(${rx}, ${ry})`)
+                        .attr('opacity', 0);
+
+                    // Efeito de glow/sombra atrás do nó
+                    const glow = nodeG.append('circle')
+                        .attr('r', 24)
+                        .attr('fill', 'none')
+                        .attr('stroke', sec.color)
+                        .attr('stroke-width', 1.5)
+                        .attr('stroke-opacity', 0.3)
+                        .style('filter', `drop-shadow(0 0 8px ${sec.color})`);
+
+                    // Fundo do mini glass-card do nó
+                    nodeG.append('circle')
+                        .attr('r', 20)
+                        .attr('fill', 'rgba(255, 255, 255, 0.05)')
+                        .attr('stroke', 'rgba(255, 255, 255, 0.1)')
+                        .attr('stroke-width', 1);
+
+                    // Ícone Lucide via foreignObject
+                    nodeG.append('foreignObject')
+                        .attr('x', -12)
+                        .attr('y', -12)
+                        .attr('width', 24)
+                        .attr('height', 24)
+                        .html(`<i data-lucide="${node.icon}" class="w-6 h-6 text-white/80" style="color: ${sec.color}; stroke-width: 1.8;"></i>`);
+
+                    // Label abaixo do nó
+                    nodeG.append('text')
+                        .text(node.label)
+                        .attr('y', 36)
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', 'rgba(255, 255, 255, 0.4)')
+                        .attr('font-size', 10)
+                        .attr('font-weight', 600)
+                        .attr('letter-spacing', 1);
+
+                    // Armazena referências para a animação do loop
+                    nodeElements.push({
+                        element: nodeG,
+                        glow: glow,
+                        rx: rx,
+                        ry: ry,
+                        color: sec.color,
+                        secIdx: secIdx,
+                        nodeIdx: nodeIdx,
+                        angRad: angRad
+                    });
+
+                    // Linha conectora Maestro -> Nó
+                    svg.insert('line', ':first-child')
+                        .attr('x1', cx)
+                        .attr('y1', cy - 40) // topo do pódio
+                        .attr('x2', rx)
+                        .attr('y2', ry)
+                        .attr('stroke', sec.color)
+                        .attr('stroke-width', 1)
+                        .attr('stroke-dasharray', '2 6')
+                        .attr('opacity', 0)
+                        .transition()
+                        .delay(400 + secIdx * 250 + nodeIdx * 50)
+                        .duration(800)
+                        .attr('opacity', 0.12);
+                });
+            });
+
+            // Pódio do Maestro
+            const podium = svg.append('g')
+                .attr('transform', `translate(${cx}, ${cy})`);
+
+            // Base do pódio
+            podium.append('path')
+                .attr('d', 'M-40,20 L40,20 L25,-10 L-25,-10 Z')
+                .attr('fill', 'rgba(255, 255, 255, 0.05)')
+                .attr('stroke', 'rgba(255, 255, 255, 0.15)')
+                .attr('stroke-width', 1.5)
+                .attr('opacity', 0)
+                .transition()
+                .duration(800)
+                .ease(d3.easeBackOut)
+                .attr('opacity', 1);
+
+            // Estante de partitura do Maestro (glow)
+            const stand = podium.append('g')
+                .attr('transform', 'translate(0, -20)')
+                .attr('opacity', 0);
+
+            stand.transition()
+                .delay(200)
+                .duration(600)
+                .ease(d3.easeBackOut)
+                .attr('opacity', 1);
+
+            // Haste
+            stand.append('line')
+                .attr('x1', 0).attr('y1', 20)
+                .attr('x2', 0).attr('y2', -20)
+                .attr('stroke', 'rgba(255, 255, 255, 0.3)')
+                .attr('stroke-width', 3);
+
+            // Prato da estante (glassmorphic angled rect)
+            stand.append('polygon')
+                .attr('points', '-24,-20 24,-20 18,-38 -18,-38')
+                .attr('fill', 'rgba(0, 0, 0, 0.7)')
+                .attr('stroke', PRIMARY)
+                .attr('stroke-width', 1.5)
+                .style('filter', `drop-shadow(0 0 6px ${PRIMARY})`);
+
+            // Linhas simulando partitura na estante
+            stand.append('line')
+                .attr('x1', -12).attr('y1', -26)
+                .attr('x2', 12).attr('y2', -26)
+                .attr('stroke', 'rgba(255, 255, 255, 0.3)')
+                .attr('stroke-width', 1.5);
+            stand.append('line')
+                .attr('x1', -10).attr('y1', -32)
+                .attr('x2', 10).attr('y2', -32)
+                .attr('stroke', 'rgba(255, 255, 255, 0.3)')
+                .attr('stroke-width', 1.5);
+
+            // Maestro (representação estilizada como círculo de energia/luz com halo)
+            const maestro = podium.append('g')
+                .attr('transform', 'translate(0, -50)')
+                .attr('opacity', 0);
+
+            maestro.transition()
+                .delay(300)
+                .duration(700)
+                .ease(d3.easeBackOut)
+                .attr('opacity', 1);
+
+            maestro.append('circle')
+                .attr('r', 18)
+                .attr('fill', PRIMARY)
+                .attr('opacity', 0.75)
+                .style('filter', `drop-shadow(0 0 16px ${PRIMARY})`);
+
+            maestro.append('text')
+                .text('DEV')
+                .attr('text-anchor', 'middle')
+                .attr('dy', 4)
+                .attr('fill', '#fff')
+                .attr('font-size', 10)
+                .attr('font-weight', 900)
+                .attr('letter-spacing', 1.5);
+
+            // Batuta (pivotada no Maestro em (cx, cy - 65))
+            const batutaPivotX = cx;
+            const batutaPivotY = cy - 65;
+
+            const batutaG = svg.append('g')
+                .attr('transform', `translate(${batutaPivotX}, ${batutaPivotY})`)
+                .attr('opacity', 0);
+
+            batutaG.transition()
+                .delay(500)
+                .duration(600)
+                .attr('opacity', 1);
+
+            // Haste da batuta
+            batutaG.append('line')
+                .attr('x1', 0).attr('y1', 0)
+                .attr('x2', 45).attr('y2', -45) // apontando para cima/direita
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2.5)
+                .attr('stroke-linecap', 'round');
+
+            // Ponta brilhante da batuta (onde as partículas nascem)
+            const batutaTip = batutaG.append('circle')
+                .attr('cx', 45).attr('cy', -45)
+                .attr('r', 5)
+                .attr('fill', ACCENT2)
+                .style('filter', `drop-shadow(0 0 8px ${ACCENT2})`);
+
+            // Movimento da batuta (loop suave)
+            let time = 0;
+            let currentTipX = cx + 45;
+            let currentTipY = (cy - 65) - 45;
+
+            const timer = d3.timer(() => {
+                if (myGen !== window.__operadorGen) {
+                    timer.stop();
+                    return;
+                }
+
+                time += 0.04;
+                // Movimento em infinito (figura 8) para regência expressiva
+                const angle = Math.sin(time) * 35 - 15; // balança de um lado para o outro
+                const scaleY = Math.cos(2 * time) * 10; // movimento vertical menor
+                
+                batutaG.attr('transform', `translate(${batutaPivotX}, ${batutaPivotY}) rotate(${angle}) translate(0, ${scaleY})`);
+
+                // Calcula a posição real da ponta no SVG para emitir partículas
+                const angleRad = (angle - 45) * Math.PI / 180;
+                const L = 63.64;
+                currentTipX = batutaPivotX + L * Math.cos(angleRad);
+                currentTipY = (batutaPivotY + scaleY) + L * Math.sin(angleRad);
+            });
+
+            // Entrada coreografada dos elementos (Stagger)
+            nodeElements.forEach(node => {
+                node.element.transition()
+                    .delay(600 + node.secIdx * 250 + node.nodeIdx * 50)
+                    .duration(800)
+                    .ease(d3.easeBackOut)
+                    .attr('opacity', 1)
+                    .on('end', () => {
+                        // Após entrar, registra o Lucide para esse nó
+                        lucide.createIcons();
+                    });
+            });
+
+            // Chama lucide.createIcons() no início e após as entradas para garantir
+            setTimeout(() => {
+                if (myGen === window.__operadorGen) {
+                    lucide.createIcons();
+                }
+            }, 100);
+
+            // Função para emitir onda sonora expansiva a partir do Maestro
+            function emitWave() {
+                if (myGen !== window.__operadorGen) return;
+
+                // Onda principal circular de energia
+                svg.insert('circle', ':nth-child(2)')
+                    .attr('cx', cx)
+                    .attr('cy', cy - 50)
+                    .attr('r', 10)
+                    .attr('fill', 'none')
+                    .attr('stroke', PRIMARY)
+                    .attr('stroke-width', 2.5)
+                    .attr('opacity', 0.5)
+                    .style('filter', `drop-shadow(0 0 8px ${PRIMARY})`)
+                    .transition()
+                    .duration(1200)
+                    .ease(d3.easeLinear)
+                    .attr('r', 420)
+                    .attr('opacity', 0)
+                    .remove();
+
+                // Ondas em formato de arcos sonoros (linhas de compasso)
+                for (let i = 0; i < 2; i++) {
+                    const waveArc = svg.append('path')
+                        .attr('fill', 'none')
+                        .attr('stroke', ACCENT2)
+                        .attr('stroke-width', 1.5 - i * 0.5)
+                        .attr('opacity', 0.4 - i * 0.15);
+
+                    const startAngleRad = -170 * Math.PI / 180;
+                    const endAngleRad = -10 * Math.PI / 180;
+
+                    waveArc.transition()
+                        .duration(1200)
+                        .delay(i * 150)
+                        .ease(d3.easeLinear)
+                        .tween('arc', () => {
+                            return t => {
+                                const R = 40 + t * 380;
+                                const path = d3.path();
+                                path.arc(cx, cy - 50, R, startAngleRad, endAngleRad);
+                                waveArc.attr('d', path.toString());
+                            };
+                        })
+                        .style('opacity', 0)
+                        .remove();
+                }
+
+                // Dispara pulso e partículas nos robôs/naipes conforme a onda passa
+                nodeElements.forEach(node => {
+                    const delay = 300 + node.secIdx * 250 + node.nodeIdx * 30; // simula a propagação
+                    
+                    const tOut = setTimeout(() => {
+                        if (myGen !== window.__operadorGen) return;
+
+                        // 1. Pulso no nó
+                        node.glow.transition()
+                            .duration(150)
+                            .attr('r', 32)
+                            .attr('stroke-opacity', 0.8)
+                            .attr('stroke-width', 3)
+                            .transition()
+                            .duration(400)
+                            .attr('r', 24)
+                            .attr('stroke-opacity', 0.3)
+                            .attr('stroke-width', 1.5);
+
+                        node.element.select('circle:nth-child(2)') // fundo do card
+                            .transition()
+                            .duration(150)
+                            .attr('fill', 'rgba(255, 144, 77, 0.15)')
+                            .attr('stroke', PRIMARY)
+                            .transition()
+                            .duration(400)
+                            .attr('fill', 'rgba(255, 255, 255, 0.05)')
+                            .attr('stroke', 'rgba(255, 255, 255, 0.1)');
+
+                        // 2. Emite pequenas partículas de código brilhantes saindo do nó para cima
+                        for (let i = 0; i < 2; i++) {
+                            const pX = node.rx + (Math.random() - 0.5) * 20;
+                            const pY = node.ry - 10;
+                            const char = ['{', '}', '[', ']', 'code', 'ok', '♪', '♫'][Math.floor(Math.random() * 8)];
+                            
+                            const p = svg.append('text')
+                                .text(char)
+                                .attr('x', pX)
+                                .attr('y', pY)
+                                .attr('fill', node.color)
+                                .attr('font-size', char.length > 1 ? 8 : 12)
+                                .attr('font-weight', 800)
+                                .attr('opacity', 0.8)
+                                .style('filter', `drop-shadow(0 0 3px ${node.color})`);
+
+                            p.transition()
+                                .duration(800 + Math.random() * 400)
+                                .ease(d3.easeQuadOut)
+                                .attr('y', pY - 40 - Math.random() * 30)
+                                .attr('x', pX + (Math.random() - 0.5) * 30)
+                                .attr('opacity', 0)
+                                .remove();
+                        }
+                    }, delay);
+
+                    window.__operadorTimers.push(tOut);
+
+                    // 3. Emite partícula/nota fluindo do Maestro até o Nó
+                    emitFlowParticle(node);
+                });
+            }
+
+            // Função para emitir partícula que viaja do Maestro até um Nó específico
+            function emitFlowParticle(node) {
+                const startX = currentTipX;
+                const startY = currentTipY;
+                const endX = node.rx;
+                const endY = node.ry;
+
+                const chars = ['{', '}', '=>', '&&', '||', '♫', '♪', '♬'];
+                const char = chars[Math.floor(Math.random() * chars.length)];
+
+                const particle = svg.append('text')
+                    .text(char)
+                    .attr('x', startX)
+                    .attr('y', startY)
+                    .attr('fill', node.color)
+                    .attr('font-size', char.length > 1 ? 10 : 13)
+                    .attr('font-weight', 800)
+                    .attr('opacity', 0.9)
+                    .attr('text-anchor', 'middle')
+                    .style('filter', `drop-shadow(0 0 4px ${node.color})`);
+
+                // Interpolação de caminho curvo para a partícula viajar de forma orgânica
+                const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 80;
+                const midY = (startY + endY) / 2 - 50 - Math.random() * 50;
+
+                particle.transition()
+                    .duration(600 + node.secIdx * 150)
+                    .ease(d3.easeQuadIn)
+                    .tween('position', () => {
+                        const interpolatorX = d3.interpolateNumber(startX, endX);
+                        const interpolatorY = d3.interpolateNumber(startY, endY);
+                        // Curva quadrática usando Bezier
+                        return t => {
+                            const x = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * midX + t * t * endX;
+                            const y = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * midY + t * t * endY;
+                            particle.attr('x', x).attr('y', y);
+                        };
+                    })
+                    .style('opacity', 0)
+                    .remove();
+            }
+
+            // Ciclo de regência principal (pulso a cada 1800ms)
+            window.__operadorPulse = setInterval(emitWave, 1800);
+            
+            // Dispara a primeira onda após uma pequena pausa para a entrada acabar
+            const firstWaveTimer = setTimeout(emitWave, 1000);
+            window.__operadorTimers.push(firstWaveTimer);
+        }
+
+        // ==========================================
+        // TRIGGER SYSTEM & NAVIGATION
+        // ==========================================
+        const stages = [
+            { stage: document.getElementById('chatbot-stage'), fn: animateChatbot, replay: 'replay-chatbot' },
+            { stage: document.getElementById('skill-stage'), fn: animateSkill, replay: 'replay-skill' },
+            { stage: document.getElementById('mcp-stage'), fn: animateMcp, replay: 'replay-mcp' },
+            { stage: document.getElementById('trigger-stage'), fn: animateTrigger, replay: 'replay-trigger' },
+            { stage: document.getElementById('contexto-stage'), fn: animateContexto, replay: 'replay-contexto' },
+            { stage: document.getElementById('fluxo-stage'), fn: animateFluxo, replay: 'replay-fluxo' },
+            { stage: document.getElementById('venv-stage'), fn: animateVenv, replay: 'replay-venv' },
+            { stage: document.getElementById('pretool-stage'), fn: animatePretool, replay: 'replay-pretool' },
+            { stage: document.getElementById('posttool-stage'), fn: animatePosttool, replay: 'replay-posttool' },
+            { stage: document.getElementById('operador-stage'), fn: animateOperador, replay: 'replay-operador' }
+        ].filter(s => s.stage);
+
+        function setupAnimationTriggers() {
+            const triggered = new Set();
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const found = stages.find(s => s.stage === entry.target || s.stage.closest('section') === entry.target);
+                    if (!found) return;
+                    if (entry.isIntersecting && !triggered.has(found.stage.id)) {
+                        triggered.add(found.stage.id);
+                        found.fn();
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            document.querySelectorAll('section').forEach(sec => observer.observe(sec));
+
+            // Replay buttons
+            stages.forEach(s => {
+                const btn = document.getElementById(s.replay);
+                if (btn) btn.addEventListener('click', () => s.fn());
+            });
+        }
+
+        setupAnimationTriggers();
+
+        // === CONTROLES DE SLIDE: navegação card-a-card (progresso + botão + teclado) ===
+        (function () {
+            const cardSections = Array.from(document.querySelectorAll('body > section'));
+            if (cardSections.length === 0) return;
+
+            const progress = document.getElementById('mira-progress');
+            const nextBtn = document.getElementById('mira-next');
+            const nextIcon = document.getElementById('mira-next-icon');
+
+            const atBottom = () =>
+                (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+
+            function currentIndex() {
+                const y = window.scrollY + window.innerHeight * 0.3;
+                let idx = -1;
+                for (let i = 0; i < cardSections.length; i++) {
+                    if (cardSections[i].offsetTop <= y) idx = i;
+                }
+                return idx;
+            }
+
+            function goTo(i) {
+                const idx = Math.max(0, Math.min(cardSections.length - 1, i));
+                cardSections[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            window.addEventListener('scroll', () => {
+                const docH = document.documentElement.scrollHeight - window.innerHeight;
+                progress.style.width = (docH > 0 ? (window.scrollY / docH) * 100 : 0) + '%';
+                nextBtn.classList.toggle('visible', window.scrollY > 300);
+                nextIcon.setAttribute('data-lucide', atBottom() ? 'chevron-up' : 'chevron-down');
+                lucide.createIcons();
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (atBottom()) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+                goTo(currentIndex() + 1);
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (['ArrowRight', 'ArrowDown', 'PageDown'].includes(e.key)) {
+                    e.preventDefault();
+                    goTo(currentIndex() + 1);
+                } else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) {
+                    e.preventDefault();
+                    const idx = currentIndex();
+                    if (idx <= 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+                    else goTo(idx - 1);
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    goTo(cardSections.length - 1);
+                } else if (e.key.toLowerCase() === 'f') {
+                    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                    else document.exitFullscreen();
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

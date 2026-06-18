@@ -1,0 +1,1 @@
+Apresentação focada na especificação e arquitetura de Agent Skills, demonstrando as capacidades, o formato da API e como os agentes interagem com essas habilidades em pipelines de execução e uso em ferramentas de automação.
